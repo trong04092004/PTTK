@@ -1,0 +1,75 @@
+package Model;
+import java.util.Date;
+public class User {
+    private int id;
+    private String name;
+    private String username;
+    private String password;
+    private String address;
+    private String tel;
+    private Date bod;
+    private String role;
+    
+    public User() {
+    	
+    }
+    public User(int id, String name, String username, String password, String address, String tel, Date bod, String role) {
+    	this.id=id;
+    	this.name=name;
+    	this.username=username;
+    	this.password=password;
+    	this.address=address;
+    	this.tel=tel;
+    	this.bod=bod;
+    	this.role=role;
+    }
+	public int getId() {
+		return id;
+	}
+	public void setId(int id) {
+		this.id = id;
+	}
+	public String getName() {
+		return name;
+	}
+	public void setName(String name) {
+		this.name = name;
+	}
+	public String getUsername() {
+		return username;
+	}
+	public void setUsername(String username) {
+		this.username = username;
+	}
+	public String getPassword() {
+		return password;
+	}
+	public void setPassword(String password) {
+		this.password = password;
+	}
+	public String getAddress() {
+		return address;
+	}
+	public void setAddress(String address) {
+		this.address = address;
+	}
+	public String getTel() {
+		return tel;
+	}
+	public void setTel(String tel) {
+		this.tel = tel;
+	}
+	public Date getBod() {
+		return bod;
+	}
+	public void setBod(Date bod) {
+		this.bod = bod;
+	}
+	public String getRole() {
+		return role;
+	}
+	public void setRole(String role) {
+		this.role = role;
+	}
+    
+}
