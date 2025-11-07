@@ -14,7 +14,7 @@ public class BillDAO extends DAO {
         super();
     }
 
-    public Bill getBillByTableId(int tableorderId) {
+    public Bill getBill(int tableorderId) {
         Bill bill = null;
         String sql = "SELECT b.id, b.paymentDate, b.note, b.status " +
                 "FROM tblBill b " +

@@ -57,7 +57,7 @@ public class TableOrderServlet extends HttpServlet {
 				TableOrder selectedOrder = list.get(index);
 				int tableorderId = selectedOrder.getId();
 				BillDAO billDAO = new BillDAO();
-				Bill bill = billDAO.getBillByTableId(tableorderId);
+				Bill bill = billDAO.getBill(tableorderId);
 
 				if (bill != null) {
 					session.setAttribute("currentBill", bill);

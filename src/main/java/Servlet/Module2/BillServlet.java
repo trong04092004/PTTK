@@ -27,31 +27,31 @@ public class BillServlet extends HttpServlet {
     protected void doGet(HttpServletRequest req, HttpServletResponse resp)
             throws ServletException, IOException {
 
-        req.setCharacterEncoding("UTF-8");
-        resp.setCharacterEncoding("UTF-8");
-
-        String action = req.getParameter("action");
-        String tableIdParam = req.getParameter("tableId");
-
-        if ("getBill".equals(action) && tableIdParam != null) {
-            try {
-                int tableId = Integer.parseInt(tableIdParam);
-                Bill bill = billDAO.getBillByTableId(tableId);
-
-                if (bill != null) {
-                    HttpSession session = req.getSession();
-                    session.setAttribute("currentBill", bill);
-                    resp.sendRedirect(req.getContextPath() + "/MenuFood2Servlet?action=search");
-                } else {
-                    resp.getWriter().println("<script>alert('Không tìm thấy hóa đơn cho bàn này!');history.back();</script>");
-                }
-            } catch (NumberFormatException e) {
-                e.printStackTrace();
-                resp.getWriter().println("<script>alert('Dữ liệu không hợp lệ!');history.back();</script>");
-            }
-        } else {
-            resp.sendRedirect(req.getContextPath() + "/searchTableOrdered");
-        }
+//        req.setCharacterEncoding("UTF-8");
+//        resp.setCharacterEncoding("UTF-8");
+//
+//        String action = req.getParameter("action");
+//        String tableIdParam = req.getParameter("tableId");
+//
+//        if ("getBill".equals(action) && tableIdParam != null) {
+//            try {
+//                int tableId = Integer.parseInt(tableIdParam);
+//                Bill bill = billDAO.getBill(tableId);
+//
+//                if (bill != null) {
+//                    HttpSession session = req.getSession();
+//                    session.setAttribute("currentBill", bill);
+//                    resp.sendRedirect(req.getContextPath() + "/MenuFood2Servlet?action=search");
+//                } else {
+//                    resp.getWriter().println("<script>alert('Không tìm thấy hóa đơn cho bàn này!');history.back();</script>");
+//                }
+//            } catch (NumberFormatException e) {
+//                e.printStackTrace();
+//                resp.getWriter().println("<script>alert('Dữ liệu không hợp lệ!');history.back();</script>");
+//            }
+//        } else {
+//            resp.sendRedirect(req.getContextPath() + "/searchTableOrdered");
+//        }
     }
     @Override
     protected void doPost(HttpServletRequest req, HttpServletResponse resp)
