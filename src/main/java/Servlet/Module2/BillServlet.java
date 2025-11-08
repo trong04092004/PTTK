@@ -1,6 +1,7 @@
 package Servlet.Module2;
 
 import DAO.BillDAO;
+import DAO.FoodOrderDAO;
 import DAO.TableOrderDAO;
 import Model.Bill;
 import Model.TableOrder;
@@ -16,42 +17,13 @@ import java.io.IOException;
 public class BillServlet extends HttpServlet {
     private BillDAO billDAO;
     private TableOrderDAO tableOrderDAO;
+    private FoodOrderDAO foodOrderDAO;
 
     @Override
     public void init() {
         billDAO = new BillDAO();
         tableOrderDAO = new TableOrderDAO();
-    }
-
-    @Override
-    protected void doGet(HttpServletRequest req, HttpServletResponse resp)
-            throws ServletException, IOException {
-
-//        req.setCharacterEncoding("UTF-8");
-//        resp.setCharacterEncoding("UTF-8");
-//
-//        String action = req.getParameter("action");
-//        String tableIdParam = req.getParameter("tableId");
-//
-//        if ("getBill".equals(action) && tableIdParam != null) {
-//            try {
-//                int tableId = Integer.parseInt(tableIdParam);
-//                Bill bill = billDAO.getBill(tableId);
-//
-//                if (bill != null) {
-//                    HttpSession session = req.getSession();
-//                    session.setAttribute("currentBill", bill);
-//                    resp.sendRedirect(req.getContextPath() + "/MenuFood2Servlet?action=search");
-//                } else {
-//                    resp.getWriter().println("<script>alert('Không tìm thấy hóa đơn cho bàn này!');history.back();</script>");
-//                }
-//            } catch (NumberFormatException e) {
-//                e.printStackTrace();
-//                resp.getWriter().println("<script>alert('Dữ liệu không hợp lệ!');history.back();</script>");
-//            }
-//        } else {
-//            resp.sendRedirect(req.getContextPath() + "/searchTableOrdered");
-//        }
+        foodOrderDAO = new FoodOrderDAO();
     }
     @Override
     protected void doPost(HttpServletRequest req, HttpServletResponse resp)
@@ -59,19 +31,53 @@ public class BillServlet extends HttpServlet {
         
         req.setCharacterEncoding("UTF-8");
         resp.setCharacterEncoding("UTF-8");
+        String action = req.getParameter("action");
 
         try {
             HttpSession session = req.getSession();
             Bill bill = (Bill) session.getAttribute("currentBill");
             TableOrder tableOrder = (TableOrder) session.getAttribute("currentTableOrder");
-            if (bill == null) {
+            
+            if (bill == null || tableOrder == null) {
                 resp.sendRedirect(req.getContextPath() + "/searchTableOrdered");
                 return;
             }
-            boolean success = billDAO.updateBill(bill);
-            boolean success2 = tableOrderDAO.updateTableOrder(tableOrder.getId());
-            String status = success && success2 ? "success" : "fail";
-            resp.sendRedirect(req.getContextPath() + "/View/Customer/ConfirmOrderView.jsp?status=" + status);
+            String[] foodOrderIds = req.getParameterValues("foodOrderId");
+            String[] quantities = req.getParameterValues("quantity");
+
+            boolean allUpdatesSuccess = true;
+            
+            if (foodOrderIds != null && quantities != null && foodOrderIds.length == quantities.length) {
+                for (int i = 0; i < foodOrderIds.length; i++) {
+                    int foodOrderId = Integer.parseInt(foodOrderIds[i]);
+                    int newQuantity = Integer.parseInt(quantities[i]);
+                    
+                    boolean updateResult;
+                    if (newQuantity <= 0) {
+                        updateResult = foodOrderDAO.deleteFoodOrder(foodOrderId); 
+                    } else {
+                        updateResult = foodOrderDAO.updateFoodOrderQuantity(foodOrderId, newQuantity);
+                    }
+                    if (!updateResult) {
+                        allUpdatesSuccess = false;
+                    }
+                }
+            }
+            if (!allUpdatesSuccess) {
+                resp.sendRedirect(req.getContextPath() + "/View/Customer/ConfirmOrderView.jsp?status=fail");
+                return;
+            }
+            if ("confirm".equals(action)) {
+                boolean success = billDAO.updateBill(bill); 
+                boolean success2 = tableOrderDAO.updateTableOrder(tableOrder.getId());
+                boolean success3 = foodOrderDAO.updateStatusFO(bill.getId());
+                String status = success && success2 && success3 ? "success" : "fail";
+                resp.sendRedirect(req.getContextPath() + "/View/Customer/ConfirmOrderView.jsp?status=" + status);
+            } else if ("save_and_back".equals(action)) {
+                resp.sendRedirect(req.getContextPath() + "/MenuFood2Servlet?action=search");
+            } else {
+                resp.sendRedirect(req.getContextPath() + "/View/Customer/ConfirmOrderView.jsp?status=fail");
+            }
 
         } catch (Exception e) {
             e.printStackTrace();

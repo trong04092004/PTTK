@@ -39,6 +39,7 @@
 <meta charset="UTF-8">
 <title>Xác nhận đơn đặt món</title>
 <style>
+    /* --- TOÀN BỘ CSS CỦA BẠN (giữ nguyên) --- */
     * {
         box-sizing: border-box;
         margin: 0;
@@ -115,6 +116,15 @@
         font-size: 15px;
         color: #333;
     }
+    
+    td input[type="number"] {
+        width: 70px;
+        padding: 5px;
+        text-align: right;
+        border: 1px solid #ccc;
+        border-radius: 5px;
+        font-size: 15px;
+    }
 
     tr:nth-child(even) {
         background-color: #f9fbff;
@@ -155,6 +165,9 @@
     .btn-back {
         background-color: #00bfff;
         color: #333;
+        text-decoration: none;
+        display: inline-block;
+        line-height: 1.5;
     }
 
     .btn-back:hover {
@@ -172,7 +185,7 @@
         background-color: #0056d6;
         transform: translateY(-2px);
     }
-
+    
     .popup-overlay {
         display: none;
         position: fixed;
@@ -235,48 +248,58 @@
             <p><strong>Tầng:</strong> <%= tang %></p>
         </div>
 
-        <table>
-            <thead>
-                <tr>
-                    <th>STT</th>
-                    <th>Tên món</th>
-                    <th class="number">Giá (VNĐ)</th>
-                    <th class="number">Số lượng</th>
-                    <th class="number">Thành tiền</th>
-                </tr>
-            </thead>
-            <tbody>
-                <% if (orderedList == null || orderedList.isEmpty()) { %>
-                <tr>
-                    <td colspan="5" style="text-align:center; color:#666;">Chưa có món nào được chọn.</td>
-                </tr>
-                <% } else {
-                    int stt = 1;
-                    for (FoodOrder order : orderedList) {
-                        double thanhTien = order.getPrice() * order.getQuantity();
-                %>
-                <tr>
-                    <td><%= stt++ %></td>
-                    <td><%= order.getMenuFood().getName() %></td>
-                    <td class="number"><%= formatter.format(order.getPrice()) %></td>
-                    <td class="number"><%= order.getQuantity() %></td>
-                    <td class="number"><%= formatter.format(thanhTien) %></td>
-                </tr>
-                <%  } } %>
-                <tr class="total-row">
-                    <td colspan="4" class="number">Tổng cộng</td>
-                    <td class="number"><%= formatter.format(tongCong) %> VNĐ</td>
-                </tr>
-            </tbody>
-        </table>
-
-        <div class="buttons">
-            <a href="${pageContext.request.contextPath}/MenuFood2Servlet?action=search" class="btn btn-back">⬅ Quay lại</a>
-            <form action="${pageContext.request.contextPath}/BillServlet" method="POST" style="margin:0;">
-                <button type="submit" class="btn btn-confirm">✔ Xác nhận đặt món</button>
-            </form>
-        </div>
-    </div>
+        <form action="${pageContext.request.contextPath}/BillServlet" method="POST">
+            <table>
+                <thead>
+                    <tr>
+                        <th>STT</th>
+                        <th>Tên món</th>
+                        <th class="number">Giá (VNĐ)</th>
+                        <th class="number">Số lượng</th>
+                        <th class="number">Thành tiền</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <% if (orderedList == null || orderedList.isEmpty()) { %>
+                    <tr>
+                        <td colspan="5" style="text-align:center; color:#666;">Chưa có món nào được chọn.</td>
+                    </tr>
+                    <% } else {
+                        int stt = 1;
+                        for (FoodOrder order : orderedList) {
+                            double thanhTien = order.getPrice() * order.getQuantity();
+                    %>
+                    <tr class="order-row">
+                        <input type="hidden" name="foodOrderId" value="<%= order.getId() %>">
+                        <td><%= stt++ %></td>
+                        <td><%= order.getMenuFood().getName() %></td>
+                        <td class="number price-cell"><%= formatter.format(order.getPrice()) %></td>
+                        <td class="number">
+                            <input type="number"
+                                   name="quantity"
+                                   value="<%= order.getQuantity() %>"
+                                   min="0"
+                                   class="quantity-input"
+                                   data-price="<%= order.getPrice() %>"
+                                   onchange="updateRow(this)"
+                                   onkeyup="updateRow(this)">
+                        </td>
+                        <td class="number total-cell"><%= formatter.format(thanhTien) %></td>
+                    </tr>
+                    <%  } } %>
+                    <tr class="total-row">
+                        <td colspan="4" class="number">Tổng cộng</td>
+                        <td class="number" id="grand-total"><%= formatter.format(tongCong) %> VNĐ</td>
+                    </tr>
+                </tbody>
+            </table>
+    
+            <div class="buttons">
+                <button type="submit" name="action" value="save_and_back" class="btn btn-back">⬅ Quay lại</button>
+                
+                <button type="submit" name="action" value="confirm" class="btn btn-confirm">✔ Xác nhận đặt món</button>
+            </div>
+        </form> </div>
 
     <div id="popup" class="popup-overlay">
         <div class="popup-content">
@@ -307,6 +330,40 @@
             if (status === "success") {
                 window.location.href = "${pageContext.request.contextPath}/searchTableOrdered";
             }
+        }
+        
+        const formatter = new Intl.NumberFormat('vi-VN');
+
+        function updateRow(input) {
+            const quantity = parseInt(input.value);
+            const price = parseFloat(input.dataset.price);
+            
+            if (isNaN(quantity) || quantity < 0) {
+                input.value = 0;
+            }
+            
+            const row = input.closest('tr.order-row');
+            const totalCell = row.querySelector('.total-cell');
+            
+            const lineTotal = price * (quantity >= 0 ? quantity : 0);
+            totalCell.innerText = formatter.format(lineTotal);
+            updateGrandTotal();
+        }
+
+        function updateGrandTotal() {
+            const allRows = document.querySelectorAll('tr.order-row');
+            let grandTotal = 0;
+            
+            allRows.forEach(row => {
+                const quantityInput = row.querySelector('.quantity-input');
+                const quantity = parseInt(quantityInput.value) || 0;
+                const price = parseFloat(quantityInput.dataset.price);
+                if (quantity > 0) {
+                    grandTotal += price * quantity;
+                }
+            });
+            
+            document.getElementById('grand-total').innerText = formatter.format(grandTotal) + " VNĐ";
         }
     </script>
 
