@@ -2,6 +2,12 @@
 	pageEncoding="UTF-8"%>
 <%@ page import="java.util.List"%>
 <%@ page import="Model.MenuFood"%>
+<%@ page import="Model.TableOrder"%>
+<%@ page import="Model.Customer"%>
+<%@ page import="Model.Table"%>
+<%@ page import="java.text.SimpleDateFormat"%>
+<%@ page import="java.util.Date"%>
+
 <!DOCTYPE html>
 <html>
 <head>
@@ -20,8 +26,46 @@ h1 {
 	margin-bottom: 20px;
 }
 
-.search-container {
-	margin-bottom: 25px;
+.info-bar {
+	display: flex;
+	justify-content: center;
+	gap: 30px;
+	background-color: #eef5ff;
+	padding: 10px 20px;
+	border-radius: 8px;
+	margin-bottom: 20px;
+	width: 85%;
+	margin-left: auto;
+	margin-right: auto;
+	border: 1px solid #d0e0f0;
+}
+
+.info-bar p {
+	margin: 0;
+	font-size: 15px;
+	color: #333;
+}
+
+.info-bar strong {
+	color: #0056b3;
+}
+
+.controls-container {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	width: 85%;
+	margin: 0 auto 25px auto;
+}
+
+.search-form {
+	display: flex;
+	gap: 8px;
+	margin: 0;
+}
+
+.confirm-form {
+	margin: 0;
 }
 
 input[type="text"] {
@@ -42,6 +86,20 @@ button {
 
 button:hover {
 	background-color: #0099cc;
+}
+
+.confirm-btn {
+	margin-top: 0;
+	background-color: #28a745;
+	padding: 10px 20px;
+	border-radius: 6px;
+	color: white;
+	border: none;
+	cursor: pointer;
+}
+
+.confirm-btn:hover {
+	background-color: #218838;
 }
 
 table {
@@ -69,20 +127,6 @@ a {
 
 a:hover {
 	text-decoration: underline;
-}
-
-.confirm-btn {
-	margin-top: 25px;
-	background-color: #28a745;
-	padding: 10px 20px;
-	border-radius: 6px;
-	color: white;
-	border: none;
-	cursor: pointer;
-}
-
-.confirm-btn:hover {
-	background-color: #218838;
 }
 
 .popup-overlay {
@@ -121,17 +165,55 @@ a:hover {
 </style>
 </head>
 <body>
+	<%
+		TableOrder tableOrder = (TableOrder) session.getAttribute("currentTableOrder");
+        Customer customer = (tableOrder != null) ? tableOrder.getCustomer() : null;
+        Table table = (tableOrder != null) ? tableOrder.getTable() : null;
+        String tenKhachHang = (customer != null) ? customer.getName() : "N/A";
+        String soBan = (table != null) ? table.getNumberTable() : "N/A";
+        String tang = (table != null) ? table.getFloor() : "N/A";
+        String ngayDat;
+        if (tableOrder != null && tableOrder.getDate() != null) {
+            ngayDat = new SimpleDateFormat("dd/MM/yyyy").format(tableOrder.getDate());
+        } else {
+            ngayDat = new SimpleDateFormat("dd/MM/yyyy").format(new Date());
+        }
+    %>
+
 	<h1>Hệ thống nhà hàng RestMan</h1>
 	<h2>Đặt món ăn trực tuyến</h2>
+	<div class="info-bar">
+		<p>
+			<strong>Khách hàng:</strong>
+			<%= tenKhachHang %></p>
+		<p>
+			<strong>Bàn:</strong>
+			<%= soBan %>
+			(Tầng
+			<%= tang %>)
+		</p>
+		<p>
+			<strong>Ngày:</strong>
+			<%= ngayDat %></p>
+	</div>
+	<div class="controls-container">
 
-	<div class="search-container">
-		<form action="${pageContext.request.contextPath}/MenuFood2Servlet"
+		<form class="search-form"
+			action="${pageContext.request.contextPath}/MenuFood2Servlet"
 			method="get">
 			<input type="text" name="key" placeholder="Nhập tên hoặc loại món..."
 				value="<%= request.getParameter("key") != null ? request.getParameter("key") : "" %>">
 			<button type="submit" name="action" value="search">Tìm kiếm</button>
 		</form>
+
+		<form class="confirm-form"
+			action="${pageContext.request.contextPath}/MenuFood2Servlet"
+			method="get">
+			<button class="confirm-btn" type="submit" name="action"
+				value="confirm">Xác nhận đơn đặt món ➔</button>
+		</form>
 	</div>
+
 
 	<table>
 		<thead>
@@ -173,12 +255,6 @@ a:hover {
         %>
 		</tbody>
 	</table>
-
-	<form action="${pageContext.request.contextPath}/MenuFood2Servlet"
-		method="get">
-		<button class="confirm-btn" type="submit" name="action"
-			value="confirm">Xác nhận đơn đặt món</button>
-	</form>
 
 	<div id="popup" class="popup-overlay">
 		<div class="popup-content">

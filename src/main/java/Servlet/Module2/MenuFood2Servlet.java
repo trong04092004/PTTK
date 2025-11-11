@@ -1,9 +1,9 @@
 package Servlet.Module2;
 
-import DAO.FoodOrderDAO; // Thêm import
+import DAO.FoodOrderDAO;
 import DAO.MenuFoodDAO;
-import Model.Bill; // Thêm import
-import Model.FoodOrder; // Thêm import
+import Model.Bill;
+import Model.FoodOrder;
 import Model.MenuFood;
 import Model.TableOrder;
 import jakarta.servlet.ServletException;
@@ -36,6 +36,7 @@ public class MenuFood2Servlet extends HttpServlet {
 
         String action = req.getParameter("action");
         String key = req.getParameter("key");
+        HttpSession session = req.getSession(); // Lấy session ở đây
 
         try {
             if (action == null || action.equals("search")) {
@@ -45,8 +46,11 @@ public class MenuFood2Servlet extends HttpServlet {
                 } else {
                     listFood = menuFoodDAO.getAllMenuFood();
                 }
-                req.getSession().setAttribute("lastSearchKey", key);
-                req.getSession().setAttribute("listFood", listFood);
+                TableOrder tableOrder = (TableOrder) session.getAttribute("currentTableOrder");
+                req.setAttribute("currentTableOrder", tableOrder);
+
+                session.setAttribute("lastSearchKey", key);
+                session.setAttribute("listFood", listFood);
                 req.setAttribute("listFood", listFood);
 
                 req.getRequestDispatcher("/View/Customer/SearchFood2View.jsp").forward(req, resp);
@@ -71,7 +75,7 @@ public class MenuFood2Servlet extends HttpServlet {
     }
     protected void doConfirm(HttpServletRequest req, HttpServletResponse resp)
             throws ServletException, IOException {
-        
+
         req.setCharacterEncoding("UTF-8");
         resp.setCharacterEncoding("UTF-8");
         HttpSession session = req.getSession();
