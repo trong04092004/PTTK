@@ -17,6 +17,7 @@ public class UserDAO extends DAO {
 			   user.setRole(rs.getString("role"));
 			   user.setAddress(rs.getString("address"));
 			   user.setTel(rs.getString("tel"));
+			   user.setId(rs.getInt("id"));
 			   return true;
 		   }
 	   }

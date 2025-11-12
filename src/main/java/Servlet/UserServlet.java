@@ -36,7 +36,7 @@ public class UserServlet extends HttpServlet {
         if (userDAO.checkLogin(user)) {
             HttpSession session = request.getSession();
             session.setAttribute("currentUser", user);
-            session.setMaxInactiveInterval(60); 
+            session.setMaxInactiveInterval(60*1); 
             String role = user.getRole();
             if ("Manager".equalsIgnoreCase(role)) {
                 response.sendRedirect(request.getContextPath() + "/View/Manager/ManagerHomeView.jsp");
