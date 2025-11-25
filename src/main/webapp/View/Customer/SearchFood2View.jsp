@@ -1,13 +1,15 @@
 <%@ page language="java" contentType="text/html; charset=UTF-8"
 	pageEncoding="UTF-8"%>
-<%@ page import="java.util.List"%>
-<%@ page import="Model.MenuFood"%>
+<%@ page
+	import="java.util.List, Model.MenuFood, Model.TableOrder, Model.Customer, Model.Table, java.text.SimpleDateFormat, java.util.Date"%>
+
 <!DOCTYPE html>
 <html>
 <head>
 <meta charset="UTF-8">
-<title>Tìm kiếm món ăn trực tuyến</title>
+<title>Đặt món ăn trực tuyến</title>
 <style>
+/* CSS giữ nguyên */
 body {
 	font-family: Arial, sans-serif;
 	background-color: #f7f7f7;
@@ -20,8 +22,41 @@ h1 {
 	margin-bottom: 20px;
 }
 
-.search-container {
-	margin-bottom: 25px;
+.info-bar {
+	display: flex;
+	justify-content: center;
+	gap: 30px;
+	background-color: #eef5ff;
+	padding: 10px 20px;
+	border-radius: 8px;
+	margin-bottom: 20px;
+	width: 85%;
+	margin: 0 auto 20px auto;
+	border: 1px solid #d0e0f0;
+}
+
+.info-bar p {
+	margin: 0;
+	font-size: 15px;
+	color: #333;
+}
+
+.controls-container {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	width: 85%;
+	margin: 0 auto 25px auto;
+}
+
+.search-form {
+	display: flex;
+	gap: 8px;
+	margin: 0;
+}
+
+.confirm-form {
+	margin: 0;
 }
 
 input[type="text"] {
@@ -42,6 +77,14 @@ button {
 
 button:hover {
 	background-color: #0099cc;
+}
+
+.confirm-btn {
+	background-color: #28a745;
+}
+
+.confirm-btn:hover {
+	background-color: #218838;
 }
 
 table {
@@ -67,24 +110,6 @@ a {
 	text-decoration: none;
 }
 
-a:hover {
-	text-decoration: underline;
-}
-
-.confirm-btn {
-	margin-top: 25px;
-	background-color: #28a745;
-	padding: 10px 20px;
-	border-radius: 6px;
-	color: white;
-	border: none;
-	cursor: pointer;
-}
-
-.confirm-btn:hover {
-	background-color: #218838;
-}
-
 .popup-overlay {
 	display: none;
 	position: fixed;
@@ -103,33 +128,54 @@ a:hover {
 	padding: 25px 40px;
 	border-radius: 10px;
 	text-align: center;
-	box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
-}
-
-.popup-content h3 {
-	margin-bottom: 10px;
-}
-
-.popup-content button {
-	background: #00bfff;
-	color: white;
-	border: none;
-	padding: 8px 16px;
-	border-radius: 5px;
-	cursor: pointer;
 }
 </style>
 </head>
 <body>
+	<%
+	TableOrder tableOrder = (TableOrder) session.getAttribute("currentTableOrder");
+	Customer customer = (tableOrder != null) ? tableOrder.getCustomer() : null;
+	Table table = (tableOrder != null) ? tableOrder.getTable() : null;
+	String tenKhachHang = (customer != null) ? customer.getName() : "N/A";
+	String soBan = (table != null) ? table.getNumberTable() : "N/A";
+	String tang = (table != null) ? table.getFloor() : "N/A";
+	String ngayDat = (tableOrder != null && tableOrder.getDate() != null)
+			? new SimpleDateFormat("dd/MM/yyyy").format(tableOrder.getDate())
+			: new SimpleDateFormat("dd/MM/yyyy").format(new Date());
+	%>
+
 	<h1>Hệ thống nhà hàng RestMan</h1>
 	<h2>Đặt món ăn trực tuyến</h2>
 
-	<div class="search-container">
-		<form action="${pageContext.request.contextPath}/MenuFood2Servlet"
+	<div class="info-bar">
+		<p>
+			<strong>Khách hàng:</strong>
+			<%=tenKhachHang%></p>
+		<p>
+			<strong>Bàn:</strong>
+			<%=soBan%>
+			(Tầng
+			<%=tang%>)
+		</p>
+		<p>
+			<strong>Ngày:</strong>
+			<%=ngayDat%></p>
+	</div>
+
+	<div class="controls-container">
+		<form class="search-form"
+			action="${pageContext.request.contextPath}/MenuFood2Servlet"
 			method="get">
 			<input type="text" name="key" placeholder="Nhập tên hoặc loại món..."
-				value="<%= request.getParameter("key") != null ? request.getParameter("key") : "" %>">
+				value="<%=request.getParameter("key") != null ? request.getParameter("key") : ""%>">
 			<button type="submit" name="action" value="search">Tìm kiếm</button>
+		</form>
+
+		<form class="confirm-form"
+			action="${pageContext.request.contextPath}/MenuFood2Servlet"
+			method="get">
+			<button class="confirm-btn" type="submit" name="action"
+				value="confirm">Xác nhận đơn đặt món ➔</button>
 		</form>
 	</div>
 
@@ -146,39 +192,34 @@ a:hover {
 		</thead>
 		<tbody>
 			<%
-            List<MenuFood> listFood = (List<MenuFood>) request.getAttribute("listFood");
-            if (listFood == null || listFood.isEmpty()) {
-        %>
+			List<MenuFood> listFood = (List<MenuFood>) request.getAttribute("listFood");
+			if (listFood == null || listFood.isEmpty()) {
+			%>
 			<tr>
 				<td colspan="6" style="text-align: center;">Không có dữ liệu
 					món ăn.</td>
 			</tr>
 			<%
-            } else {
-                int index = 1;
-                for (MenuFood food : listFood) {
-        %>
+			} else {
+			int index = 1;
+			for (MenuFood food : listFood) {
+			%>
 			<tr>
-				<td><%= index++ %></td>
-				<td><%= food.getName() %></td>
-				<td><%= String.format("%,.0f", food.getPrice()) %></td>
-				<td><%= food.getDes() %></td>
-				<td><%= food.getType() %></td>
+				<td><%=index++%></td>
+				<td><%=food.getName()%></td>
+				<td><%=String.format("%,.0f", food.getPrice())%></td>
+				<td><%=food.getDes()%></td>
+				<td><%=food.getType()%></td>
 				<td><a
-					href="${pageContext.request.contextPath}/MenuFood2Servlet?action=choose&id=<%= food.getId() %>">Chọn</a></td>
+					href="${pageContext.request.contextPath}/MenuFood2Servlet?action=choose&id=<%= food.getId() %>"
+					class="choose-link">Chọn</a></td>
 			</tr>
 			<%
-                }
-            }
-        %>
+			}
+			}
+			%>
 		</tbody>
 	</table>
-
-	<form action="${pageContext.request.contextPath}/MenuFood2Servlet"
-		method="get">
-		<button class="confirm-btn" type="submit" name="action"
-			value="confirm">Xác nhận đơn đặt món</button>
-	</form>
 
 	<div id="popup" class="popup-overlay">
 		<div class="popup-content">
@@ -189,21 +230,34 @@ a:hover {
 	</div>
 
 	<script>
-const params = new URLSearchParams(window.location.search);
-const status = params.get("status");
-if (status === "success" || status === "fail") {
-    document.getElementById("popup").style.display = "flex";
-    document.getElementById("popup-title").innerText =
-        status === "success" ? "✅ Thành công" : "❌ Thất bại";
-    document.getElementById("popup-msg").innerText =
-        status === "success" ? "Đã thêm món thành công!" : "Không thể thêm món!";
-}
-function closePopup() {
-    document.getElementById("popup").style.display = "none";
-    const url = new URL(window.location.href);
-    url.searchParams.delete("status");
-    window.history.replaceState({}, document.title, url.toString());
-}
-</script>
+    const params = new URLSearchParams(window.location.search);
+    const status = params.get("status");
+    if (status === "success" || status === "fail") {
+        document.getElementById("popup").style.display = "flex";
+        document.getElementById("popup-title").innerText = status === "success" ? "✅ Thành công" : "❌ Thất bại";
+        document.getElementById("popup-msg").innerText = status === "success" ? "Đã thêm món thành công!" : "Không thể thêm món!";
+    }
+    function closePopup() {
+        document.getElementById("popup").style.display = "none";
+        const url = new URL(window.location.href);
+        url.searchParams.delete("status");
+        window.history.replaceState({}, document.title, url.toString());
+    }
+    let isInternalNavigation = false;
+    document.querySelectorAll('a, button, input[type=submit]').forEach(el => {
+        el.addEventListener('click', () => { isInternalNavigation = true; });
+    });
+    document.querySelectorAll('form').forEach(form => {
+        form.addEventListener('submit', () => { isInternalNavigation = true; });
+    });
+    function sendCleanupBeacon() {
+        if (!isInternalNavigation) {
+            const url = '${pageContext.request.contextPath}/FoodOrderServlet';
+            const data = new Blob(['action=cleanup'], {type: 'application/x-www-form-urlencoded'});
+            navigator.sendBeacon(url, data);
+        }
+    }
+    window.addEventListener('pagehide', sendCleanupBeacon);
+    </script>
 </body>
 </html>

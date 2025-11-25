@@ -83,7 +83,21 @@ public class FoodOrderDAO extends DAO {
 			return false;
 		}
 	}
-	
+	public boolean deletePendingOrders(int billId) {
+        String sql = "DELETE FROM tblFoodOrder WHERE tblBillId = ? AND foodOrderStatus = 'Đang đặt'";
+        
+        try {
+            PreparedStatement ps = con.prepareStatement(sql);
+            ps.setInt(1, billId);
+            
+            int rowsAffected = ps.executeUpdate();
+            return rowsAffected > 0;
+            
+        } catch (Exception e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
 	public boolean updateStatusFO(int idBill) {
 		String sql = "UPDATE tblFoodOrder SET foodOrderStatus='Đã đặt' WHERE tblBillid=?";
 	    try (PreparedStatement ps = con.prepareStatement(sql)) {

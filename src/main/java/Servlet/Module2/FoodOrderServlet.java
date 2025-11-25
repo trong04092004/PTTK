@@ -25,10 +25,31 @@ public class FoodOrderServlet extends HttpServlet {
     @Override
     protected void doPost(HttpServletRequest req, HttpServletResponse resp)
             throws ServletException, IOException {
+        
+        // Thiết lập encoding ngay đầu tiên
         req.setCharacterEncoding("UTF-8");
         resp.setCharacterEncoding("UTF-8");
 
+        String action = req.getParameter("action");
+
+        // --- KHỐI XỬ LÝ DỌN DẸP (CLEANUP) ---
+        if ("cleanup".equals(action)) {
+            try {
+                Bill bill = (Bill) req.getSession().getAttribute("currentBill");
+                if (bill != null) {
+                    boolean deleted = foodOrderDAO.deletePendingOrders(bill.getId());
+                    System.out.println("[CLEANUP] Deleted pending orders for Bill ID: " + bill.getId() + " | Result: " + deleted);
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+            return; // Quan trọng: Dừng ngay, không chạy tiếp code bên dưới
+        }
+        // ------------------------------------
+
+        // --- KHỐI XỬ LÝ THÊM MÓN ĂN ---
         try {
+            // Chỉ chạy đoạn này khi không phải là action cleanup
             int id = Integer.parseInt(req.getParameter("id"));
             int quantity = Integer.parseInt(req.getParameter("quantity"));
 
@@ -61,7 +82,10 @@ public class FoodOrderServlet extends HttpServlet {
 
         } catch (Exception e) {
             e.printStackTrace();
-            resp.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Lỗi khi thêm món ăn vào đơn hàng!");
+            // Không gửi error page cho request beacon (vì người dùng đã thoát rồi)
+            if (!"cleanup".equals(action)) {
+                resp.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Lỗi khi thêm món ăn!");
+            }
         }
     }
 

@@ -1,9 +1,9 @@
 package Servlet.Module2;
 
-import DAO.FoodOrderDAO; // Thêm import
+import DAO.FoodOrderDAO;
 import DAO.MenuFoodDAO;
-import Model.Bill; // Thêm import
-import Model.FoodOrder; // Thêm import
+import Model.Bill;
+import Model.FoodOrder;
 import Model.MenuFood;
 import Model.TableOrder;
 import jakarta.servlet.ServletException;
@@ -14,6 +14,8 @@ import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 
 import java.io.IOException;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 
 @WebServlet("/MenuFood2Servlet")
@@ -36,6 +38,7 @@ public class MenuFood2Servlet extends HttpServlet {
 
         String action = req.getParameter("action");
         String key = req.getParameter("key");
+        HttpSession session = req.getSession();
 
         try {
             if (action == null || action.equals("search")) {
@@ -45,8 +48,23 @@ public class MenuFood2Servlet extends HttpServlet {
                 } else {
                     listFood = menuFoodDAO.getAllMenuFood();
                 }
-                req.getSession().setAttribute("lastSearchKey", key);
-                req.getSession().setAttribute("listFood", listFood);
+
+                // --- ĐOẠN CODE THÊM MỚI: Sắp xếp giá từ Thấp -> Cao ---
+                if (listFood != null) {
+                    Collections.sort(listFood, new Comparator<MenuFood>() {
+                        @Override
+                        public int compare(MenuFood f1, MenuFood f2) {
+                            return Double.compare(f1.getPrice(), f2.getPrice());
+                        }
+                    });
+                }
+                // -------------------------------------------------------
+
+                TableOrder tableOrder = (TableOrder) session.getAttribute("currentTableOrder");
+                req.setAttribute("currentTableOrder", tableOrder);
+
+                session.setAttribute("lastSearchKey", key);
+                session.setAttribute("listFood", listFood);
                 req.setAttribute("listFood", listFood);
 
                 req.getRequestDispatcher("/View/Customer/SearchFood2View.jsp").forward(req, resp);
@@ -69,23 +87,33 @@ public class MenuFood2Servlet extends HttpServlet {
                     "Lỗi khi xử lý yêu cầu tìm kiếm món ăn!");
         }
     }
+
     protected void doConfirm(HttpServletRequest req, HttpServletResponse resp)
             throws ServletException, IOException {
-        
+
         req.setCharacterEncoding("UTF-8");
         resp.setCharacterEncoding("UTF-8");
         HttpSession session = req.getSession();
 
         try {
             Bill bill = (Bill) session.getAttribute("currentBill");
-
             TableOrder tableOrder = (TableOrder) session.getAttribute("currentTableOrder");
 
             if (bill == null || tableOrder == null) {
                 resp.sendRedirect(req.getContextPath() + "/searchTableOrdered");
                 return;
             }
+            
             List<FoodOrder> orderedList = foodOrderDAO.getFoodOrdered(bill.getId());
+            
+            float calculatedTotal = 0;
+            if (orderedList != null) {
+                for (FoodOrder order : orderedList) {
+                    calculatedTotal += order.getPrice() * order.getQuantity();
+                }
+            }
+            bill.setTotalPayment(calculatedTotal);
+            session.setAttribute("currentBill", bill); 
             req.setAttribute("orderedList", orderedList);
             req.setAttribute("currentTableOrder", tableOrder);
             req.getRequestDispatcher("/View/Customer/ConfirmOrderView.jsp").forward(req, resp);

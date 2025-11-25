@@ -9,6 +9,8 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
 import java.io.IOException;
+import java.util.Collections;
+import java.util.Comparator; // Đã thêm import
 import java.util.List;
 
 @WebServlet("/MenuFoodServlet")
@@ -38,6 +40,18 @@ public class MenuFoodServlet extends HttpServlet {
                 } else {
                     listFood = menuFoodDAO.getAllMenuFood();
                 }
+
+                // --- SỬA LẠI: Đưa đoạn sort ra ngoài để áp dụng cho cả Tìm kiếm và GetAll ---
+                if (listFood != null) {
+                    Collections.sort(listFood, new Comparator<MenuFood>() {
+                        @Override
+                        public int compare(MenuFood f1, MenuFood f2) {
+                            return Double.compare(f1.getPrice(), f2.getPrice());
+                        }
+                    });
+                }
+                // --------------------------------------------------------------------------
+
                 req.getSession().setAttribute("listFood", listFood);
                 req.setAttribute("listFood", listFood);
                 req.getRequestDispatcher("/View/Manager/SearchFoodView.jsp").forward(req, resp);

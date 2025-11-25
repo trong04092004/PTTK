@@ -1,5 +1,6 @@
 <%@ page contentType="text/html; charset=UTF-8" language="java"%>
 <%@ page import="java.util.*, Model.TableOrder"%>
+<%@ page import="java.text.SimpleDateFormat"%>
 <!DOCTYPE html>
 <html>
 <head>
@@ -72,10 +73,15 @@ p {
 	color: #444;
 	font-style: italic;
 }
+
+tr.clickable-row:hover {
+	background-color: #f0f8ff;
+	cursor: pointer;
+}
 </style>
 </head>
 <body>
-    <h1>Hệ thống nhà hàng RestMan</h1>
+	<h1>Hệ thống nhà hàng RestMan</h1>
 	<h1>Tìm bàn đã đặt</h1>
 
 	<div class="search-box">
@@ -91,7 +97,7 @@ p {
 	<%
     List<TableOrder> list = (List<TableOrder>) request.getAttribute("listTableOrder");
     if (list != null && !list.isEmpty()) {
-%>
+    %>
 	<table>
 		<tr>
 			<th>STT</th>
@@ -103,15 +109,15 @@ p {
 		</tr>
 		<%
             int i = 1;
+            SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
             for (TableOrder order : list) {
                 String name = order.getCustomer() != null ? order.getCustomer().getName() : "";
                 String tel = order.getCustomer() != null ? order.getCustomer().getTel() : "";
                 String address = order.getCustomer() != null ? order.getCustomer().getAddress() : "";
-                String tableName = order.getTable() != null ?
-                                   (order.getTable().getNumberTable() + ", tầng " + order.getTable().getFloor()) : "";
-                String dateOrder = order.getDate() != null ?" " + order.getDate() : "";
+                String tableName = order.getTable() != null ? (order.getTable().getNumberTable() + ", tầng " + order.getTable().getFloor()) : "";
+                String dateOrder = order.getDate() != null ? sdf.format(order.getDate()) : "";
         %>
-		<tr onclick="goToFoodView(<%= i - 1 %>)" style="cursor: pointer;">
+		<tr class="clickable-row" onclick="goToFoodView(<%= i - 1 %>)">
 			<td><%= i++ %></td>
 			<td><%= name %></td>
 			<td><%= tel %></td>
@@ -119,23 +125,33 @@ p {
 			<td><%= tableName %></td>
 			<td><%= dateOrder %></td>
 		</tr>
-
-
 		<% } %>
 	</table>
-	<%
-    } else if (request.getAttribute("infoCustomer") != null) {
-%>
+	<% } else if (request.getAttribute("infoCustomer") != null) { %>
 	<p>Không tìm thấy kết quả phù hợp!</p>
-	<%
-    }
-%>
+	<% } %>
+
 	<script>
-function goToFoodView(index) {
-    window.location.href = '<%= request.getContextPath() %>/searchTableOrdered?rowIndex=' + index;
-}
-</script>
-
-
+    let isInternalNavigation = false;
+    function goToFoodView(index) {
+        isInternalNavigation = true;
+        window.location.href = '<%= request.getContextPath() %>/searchTableOrdered?rowIndex=' + index;
+    }
+    document.querySelectorAll('form').forEach(form => {
+        form.addEventListener('submit', () => {
+            isInternalNavigation = true;
+        });
+    });
+    function sendCleanupBeacon() {
+        if (!isInternalNavigation) {
+            const url = '<%= request.getContextPath() %>/FoodOrderServlet';
+            const data = new Blob(['action=cleanup'], {type: 'application/x-www-form-urlencoded'});
+            navigator.sendBeacon(url, data);
+        }
+    }
+    window.addEventListener('pagehide', sendCleanupBeacon);
+    window.addEventListener('beforeunload', function() {
+    });
+    </script>
 </body>
 </html>

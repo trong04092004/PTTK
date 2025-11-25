@@ -13,6 +13,7 @@
 <%
     List<FoodOrder> orderedList = (List<FoodOrder>) request.getAttribute("orderedList");
     TableOrder tableOrder = (TableOrder) request.getAttribute("currentTableOrder");
+    Bill currentBill = (Bill) session.getAttribute("currentBill");
     Customer customer = (tableOrder != null) ? tableOrder.getCustomer() : null;
     Table table = (tableOrder != null) ? tableOrder.getTable() : null;
     String tenKhachHang = (customer != null) ? customer.getName() : "N/A";
@@ -24,12 +25,7 @@
     } else {
         ngayDat = new SimpleDateFormat("dd/MM/yyyy").format(new Date());
     }
-    double tongCong = 0;
-    if (orderedList != null) {
-        for (FoodOrder order : orderedList) {
-            tongCong += order.getPrice() * order.getQuantity();
-        }
-    }
+    double tongCong = (currentBill != null) ? currentBill.getTotalPayment() : 0;
     DecimalFormat formatter = new DecimalFormat("###,###");
 %>
 
